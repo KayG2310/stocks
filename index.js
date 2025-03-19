@@ -26,7 +26,7 @@ app.get("/news/:company", async (req, res) => {
             
             return title.includes(company) || description.includes(company);
         });
-
+        console.log("hello bbgl");
         res.json(filteredNews);
     } catch (error) {
         res.status(500).json({ error: error.message });
