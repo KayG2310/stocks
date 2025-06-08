@@ -1,14 +1,16 @@
 const { spawn } = require('child_process');
+const path = require('path');
 
 /**
  * Calls a Python script and returns its output.
- * @param {string} scriptPath - The path to the Python script.
+ * @param {string} scriptPath - The relative path to the Python script.
  * @param {Array<string>} args - Arguments to pass to the Python script.
  * @returns {Promise<string>} - Resolves with Python script output.
  */
 function callPython(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
-    const py = spawn('python3', [scriptPath, ...args]);
+    const fullPath = path.resolve(scriptPath); // Ensure absolute path
+    const py = spawn('python3', [fullPath, ...args]);
 
     let data = '';
     let error = '';
@@ -31,11 +33,13 @@ function callPython(scriptPath, args = []) {
   });
 }
 
-// Example usage:
+// Example usage (can be removed in production):
 (async () => {
   try {
-    const result = await callPython('backend/python/yourScript.py', ['arg1', 'arg2']);
-    console.log('Output from Python:', result);
+    const ticker = 'AAPL'; // example ticker
+    const result = await callPython('backend/python/predict.py', ["TSLA"]);
+    const json = JSON.parse(result);
+    console.log('Predicted Sentiment:', json);
   } catch (err) {
     console.error('Error:', err);
   }
