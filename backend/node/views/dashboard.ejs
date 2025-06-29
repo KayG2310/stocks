@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard</title>
   <link href="/css/style.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <marquee style="background-color: #1a1a2e; padding: 12px; font-weight: bold; font-family: Arial, sans-serif; font-size: 20px; color: white; margin: 0;">
@@ -30,25 +32,112 @@
       <li><a href="/auth/logout" class="logout-btn">Logout</a></li>
     </ul>
   </nav>
-
-  <main class="main-container">
-    <section class="welcome">
-      <h1>Welcome!</h1>
-      <p>Track real-time sentiment and predicted stock movement.</p>
-    </section>
-
-    <section class="cards-section">
-      <div class="card">
-        <h3>Tesla (TSLA)</h3>
-        <p>Sentiment: Positive</p>
-        <p>Predicted Move: 📈 +2.3%</p>
+  
+  <div class="search-container">
+    <h1 class="search-title">
+      Have a look at how your stock might do over the next few days
+    </h1>
+  
+    <form class="search-form" action="/search" method="POST">
+      <div class="input-wrapper">
+        <input type="text" name="query" placeholder="Search for a stock name ..." required />
+        <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
+        <div class="quick-stock-buttons">
+          <button type="submit" formaction="/search" formmethod="POST" name="query" value="TATA">TATA</button>
+          <button type="submit" formaction="/search" formmethod="POST" name="query" value="INFY">INFY</button>
+          <button type="submit" formaction="/search" formmethod="POST" name="query" value="RELIANCE">RELIANCE</button>
+        </div>
       </div>
-      <div class="card">
-        <h3>Apple (AAPL)</h3>
-        <p>Sentiment: Neutral</p>
-        <p>Predicted Move: ➡️ 0.1%</p>
+    </form>
+  </div>
+  <div class="live-graphs-container">
+    <h2 class="section-title">Live Market Snapshots</h2>
+    <div class="graphs-grid">
+      <div class="graph-card">
+        <div class="graph-title">NIFTY 50</div>
+        <canvas id="niftyChart"></canvas>
       </div>
-    </section>
-  </main>
+      <div class="graph-card">
+        <div class="graph-title">SENSEX</div>
+        <canvas id="sensexChart"></canvas>
+      </div>
+      <div class="graph-card">
+        <div class="graph-title">INR / USD</div>
+        <canvas id="inrUsdChart"></canvas>
+      </div>
+      
+    </div>
+    
+  </div>
+  <script>
+    let chartRefs = {};
+    
+    function createChart(canvasId, label, color, initialLabels, initialData) {
+      const ctx = document.getElementById(canvasId).getContext("2d");
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: initialLabels,
+          datasets: [{
+            label: label,
+            data: initialData,
+            borderColor: color,
+            fill: false,
+            tension: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+  x: {
+    display: true,
+    title: {
+      display: true,
+      text: 'Date'
+    }
+  },
+  y: {
+    beginAtZero: false,
+    title: {
+      display: true,
+      text: 'Price (INR)'
+    }
+  }
+},
+plugins: {
+  legend: {
+    display: true,
+    position: 'top'
+  }
+}
+
+        }
+      });
+    }
+    
+    async function loadHistoricalChart(symbol, canvasId, label, color) {
+      const res = await fetch(`/api/history/${symbol}`);
+      const data = await res.json();
+    
+      const labels = data.map(d => d.time.slice(11, 16)); // show time only (HH:MM)
+      const prices = data.map(d => d.price);
+    
+      chartRefs[label] = createChart(canvasId, label, color, labels, prices);
+    }
+    
+    // Load your charts on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      loadHistoricalChart("NIFTYBEES.NS", "niftyChart", "NIFTY 50", "#2E4A62");
+      loadHistoricalChart("^BSESN", "sensexChart", "SENSEX", "#6A9FB5");
+      loadHistoricalChart("USDINR=X", "inrUsdChart", "INR/USD", "#b552b8");
+      loadHistoricalChart("GOLDAMGBD228NLBM", "goldChart", "Gold", "#d9a404");
+      loadHistoricalChart("SILVERMIC.NS", "silverChart", "Silver", "#9c9c9c");
+    });
+
+    </script>
+    
+      
+  
 </body>
 </html>

@@ -9,6 +9,34 @@ const axios = require("axios");
 const ALPHA_API_KEY = 'N9FWHMZE0CBTET7Z';
 const stockSymbols = ["AAPL", "TSLA", "APPLE", "HDFCBANK.NS", "ICICIBANK.NS"];
 const yahooFinance = require('yahoo-finance2').default;
+const router = express.Router();
+
+// POST route to handle search
+router.post('/search', async (req, res) => {
+  const query = req.body.query;
+
+  try {
+    // Step 1: Call your news API using the search query
+    const response = await axios.get(`https://newsapi.org/v2/everything`, {
+      params: {
+        q: query,
+        apiKey: process.env.NEWS_API_KEY,
+      },
+    });
+
+    const articles = response.data.articles;
+
+    // Step 2: Send this to your sentiment model (via another route or spawn Python)
+    // Here’s a dummy example:
+    // const sentiment = await analyzeSentiment(articles);
+
+    // Step 3: Render results or redirect
+    res.render('searchResult', { query, articles }); // or send to model
+  } catch (error) {
+    console.error('Search error:', error.message);
+    res.status(500).send("Search failed");
+  }
+});
 
 async function fetchStockData() {
     const stockSymbols = [
@@ -153,6 +181,35 @@ app.post("/logout", (req, res) => {
         stocks: stocks,
     });
   });
+
+app.get("/api/history/:symbol", async (req, res) => {
+  const symbol = req.params.symbol || "NIFTYBEES.NS";
+
+  try {
+    const result = await yahooFinance.historical(symbol, {
+      period1: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // last 7 days
+      interval: '1d',
+    });
+
+    if (!result || result.length === 0) {
+      return res.json([]);
+    }
+
+    const formattedData = result.map(d => ({
+      time: d.date.toISOString().split("T")[0],
+      price: d.open
+    }));
+
+    res.json(formattedData);
+  } catch (err) {
+    console.error("Yahoo Finance error:", err.message);
+    res.status(500).json({ error: "Unable to fetch chart data." });
+  }
+});
+
+  
+  
+  
   
 
 // Start server
