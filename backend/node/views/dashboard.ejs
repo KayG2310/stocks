@@ -38,9 +38,9 @@
       Have a look at how your stock might do over the next few days
     </h1>
   
-    <form class="search-form" action="/search" method="POST">
+    <form id="ticker-form" class="search-form" method="POST">
       <div class="input-wrapper">
-        <select name="query" class="dropdown-select" required>
+        <select name="query" id="ticker-select" class="dropdown-select" required>
           <option value="" disabled selected>Select a stock ticker...</option>
           <option value="RELIANCE">RELIANCE</option>
           <option value="HDFCBANK">HDFCBANK</option>
@@ -66,6 +66,14 @@
         <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
       </div>
     </form>
+    
+    <script>
+      document.getElementById('ticker-form').addEventListener('submit', function (e) {
+        const selectedTicker = document.getElementById('ticker-select').value;
+        this.action = `/predict/${selectedTicker}`;
+      });
+    </script>
+    
   </div>
   
   <div class="live-graphs-container">
