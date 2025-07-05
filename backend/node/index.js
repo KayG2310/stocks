@@ -244,12 +244,13 @@ app.post("/predict/:ticker", async (req, res) => {
     try{
       const raw = execSync(`${venvPython} E:\\stocks\\backend\\python\\predict.py ${company}`).toString();
       const predicted = JSON.parse(raw); // This will be a JS array now
-      const [open, high, low, close] = predicted;
-      console.log("Open:", open);
-      console.log("High:", high);
-      console.log("Low:", low);
-      console.log("Close:", close);
+      let [open, high, low, close] = predicted;
+      const changeFactor = (1 + sentimentScore*0.05);
 
+      open = open*changeFactor;
+      close = close*changeFactor;
+      high = high*changeFactor;
+      low = low*changeFactor;
     }
     catch(err){
       console.error("Pipeline error:", err.message);
