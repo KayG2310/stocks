@@ -40,16 +40,34 @@
   
     <form class="search-form" action="/search" method="POST">
       <div class="input-wrapper">
-        <input type="text" name="query" placeholder="Search for a stock name ..." required />
+        <select name="query" class="dropdown-select" required>
+          <option value="" disabled selected>Select a stock ticker...</option>
+          <option value="RELIANCE">RELIANCE</option>
+          <option value="HDFCBANK">HDFCBANK</option>
+          <option value="TCS">TCS</option>
+          <option value="INFY">INFY</option>
+          <option value="ICICIBANK">ICICIBANK</option>
+          <option value="LT">LT</option>
+          <option value="ITC">ITC</option>
+          <option value="SBIN">SBIN</option>
+          <option value="BHARTIARTL">BHARTIARTL</option>
+          <option value="KOTAKBANK">KOTAKBANK</option>
+          <option value="BAJFINANCE">BAJFINANCE</option>
+          <option value="HINDUNILVR">HINDUNILVR</option>
+          <option value="M&M">M&M</option>
+          <option value="MARUTI">MARUTI</option>
+          <option value="SUNPHARMA">SUNPHARMA</option>
+          <option value="TATAMOTORS">TATAMOTORS</option>
+          <option value="NTPC">NTPC</option>
+          <option value="AXISBANK">AXISBANK</option>
+          <option value="HCLTECH">HCLTECH</option>
+          <option value="TITAN">TITAN</option>
+        </select>
         <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
-        <div class="quick-stock-buttons">
-          <button type="submit" formaction="/search" formmethod="POST" name="query" value="TATA">TATA</button>
-          <button type="submit" formaction="/search" formmethod="POST" name="query" value="INFY">INFY</button>
-          <button type="submit" formaction="/search" formmethod="POST" name="query" value="RELIANCE">RELIANCE</button>
-        </div>
       </div>
     </form>
   </div>
+  
   <div class="live-graphs-container">
     <h2 class="section-title">Live Market Snapshots</h2>
     <div class="graphs-grid">
@@ -131,8 +149,6 @@ plugins: {
       loadHistoricalChart("NIFTYBEES.NS", "niftyChart", "NIFTY 50", "#2E4A62");
       loadHistoricalChart("^BSESN", "sensexChart", "SENSEX", "#6A9FB5");
       loadHistoricalChart("USDINR=X", "inrUsdChart", "INR/USD", "#b552b8");
-      loadHistoricalChart("GOLDAMGBD228NLBM", "goldChart", "Gold", "#d9a404");
-      loadHistoricalChart("SILVERMIC.NS", "silverChart", "Silver", "#9c9c9c");
     });
 
     </script>
