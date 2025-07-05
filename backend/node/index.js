@@ -10,6 +10,8 @@ const ALPHA_API_KEY = 'N9FWHMZE0CBTET7Z';
 const stockSymbols = ["AAPL", "TSLA", "APPLE", "HDFCBANK.NS", "ICICIBANK.NS"];
 const yahooFinance = require('yahoo-finance2').default;
 const router = express.Router();
+const { execSync } = require("child_process");
+const { log } = require("console");
 
 // POST route to handle search
 router.post('/search', async (req, res) => {
@@ -207,7 +209,66 @@ app.get("/api/history/:symbol", async (req, res) => {
   }
 });
 
-  
+app.post("/predict/:ticker", async (req, res) => {
+  let ticker = req.params.ticker;
+  console.log(`company is ${ticker}`);
+  const venvPython = `"E:\\stocks\\backend\\python\\venv\\Scripts\\python.exe"`;
+  try {
+    //Step 1: Fetch news using fetch_news.py
+    const newsRaw = execSync(`${venvPython} E:\\stocks\\backend\\python\\fetch_news.py "${company}"`).toString();
+    const newsList = JSON.parse(newsRaw);
+    const results = [];
+
+    // Step 2: Analyze sentiment for each news headline
+    sentimentScore = 0;
+    for (const item of newsList) {
+      const title = item.title.replace(/"/g, "'"); // Escape quotes
+      let description = item.description.replace(/"/g, "'"); // Escape quotes
+      description = description.replace("\n"," ");
+      try{
+        const output = execSync(`${venvPython} E:\\stocks\\backend\\python\\sentiment_analyzer.py "${title}: ${description}" "${company}"`).toString();
+
+        const sentimentLine = output.split("\n")[0]
+        const confidenceLine = output.split("\n")[1]
+
+        sentiment = parseInt(sentimentLine?.split(":")[1]?.trim()) || 0;
+        confidence = parseFloat(confidenceLine?.split(":")[1]?.trim()) || 0;
+
+        sentimentScore += sentiment * confidence * 100;
+      }
+      catch(err){
+        console.error("Pipeline error:", err.message);
+      }
+    }
+    //Step 3: Predict
+    try{
+      const raw = execSync(`${venvPython} E:\\stocks\\backend\\python\\predict.py ${company}`).toString();
+      const predicted = JSON.parse(raw); // This will be a JS array now
+      const [open, high, low, close] = predicted;
+      console.log("Open:", open);
+      console.log("High:", high);
+      console.log("Low:", low);
+      console.log("Close:", close);
+
+    }
+    catch(err){
+      console.error("Pipeline error:", err.message);
+    }
+
+    res.json({
+      ticker: company,
+      results: sentimentScore,
+      "open": open,
+      "close": close,
+      "high": high,
+      "low": low
+    });
+
+  } catch (err) {
+    console.error("Pipeline error:", err.message);
+    res.status(500).json({ error: "Failed to run prediction pipeline." });
+  }
+});
   
   
   
