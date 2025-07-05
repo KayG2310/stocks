@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= ticker %> Prediction</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/css/predict.css" />
+</head>
+<body>
+  <h1 style="text-align: center;"><%= ticker %> Stock Forecast</h1>
+
+  <div style="width: 80%; margin: auto;">
+    <canvas id="priceChart"></canvas>
+  </div>
+
+  <div class="metrics-container">
+    <div class="metric-card">Open<br><span><%= open.toFixed(2) %></span></div>
+    <div class="metric-card">Close<br><span><%= close.toFixed(2) %></span></div>
+    <div class="metric-card">High<br><span><%= high.toFixed(2) %></span></div>
+    <div class="metric-card">Low<br><span><%= low.toFixed(2) %></span></div>
+  </div>
+
+  <script>
+    const ctx = document.getElementById("priceChart").getContext("2d");
+    const predictedClose = parseFloat("<%= close.toFixed(2) %>");
+
+    fetch(`/api/history/<%= symbol %>`)
+      .then(res => res.json())
+      .then(data => {
+        const dates = data.map(d => d.time);
+        const prices = data.map(d => d.price);
+
+        const lastActual = prices[prices.length - 1];
+        const predictedColor = predictedClose > lastActual ? "green" : "red";
+
+        // Add predicted point
+        const extendedLabels = [...dates, "Predicted"];
+        const actualData = [...prices];
+        const predictedData = [...Array(prices.length - 1).fill(null), lastActual, predictedClose];
+
+        const chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: extendedLabels,
+            datasets: [
+              {
+                label: 'Actual Close',
+                data: actualData,
+                borderColor: "#2E4A62",
+                fill: false,
+                tension: 0.3
+              },
+              {
+                label: 'Prediction',
+                data: predictedData,
+                borderColor: predictedColor,
+                borderDash: [5, 5],
+                pointBackgroundColor: predictedData.map((p, i) =>
+                  i === predictedData.length - 1 ? predictedColor : "transparent"
+                ),
+                pointRadius: predictedData.map((p, i) => i === predictedData.length - 1 ? 6 : 0),
+                fill: false,
+                tension: 0.3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: true, position: 'top' }
+            },
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Date'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Price'
+                }
+              }
+            }
+          }
+        });
+      });
+  </script>
+</body>
+</html>

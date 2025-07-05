@@ -6,11 +6,13 @@ const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
 const axios = require("axios");
-const ALPHA_API_KEY = 'N9FWHMZE0CBTET7Z';
+const ALPHA_API_KEY = process.env.ALPHA_API_KEY;
 const stockSymbols = ["AAPL", "TSLA", "APPLE", "HDFCBANK.NS", "ICICIBANK.NS"];
 const yahooFinance = require('yahoo-finance2').default;
 const router = express.Router();
-
+const StockTickerMapping = require('./models/StockTickerMapping');
+const { execSync } = require("child_process");
+require('dotenv').config({ path: '../.env' });  // in node/index.js
 // POST route to handle search
 router.post('/search', async (req, res) => {
   const query = req.body.query;
@@ -187,10 +189,10 @@ app.get("/api/history/:symbol", async (req, res) => {
 
   try {
     const result = await yahooFinance.historical(symbol, {
-      period1: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // last 7 days
+      period1: new Date(Date.now() - 100*24 * 60 * 60 * 1000), // last 7 days
       interval: '1d',
     });
-
+    // console.log(result);
     if (!result || result.length === 0) {
       return res.json([]);
     }
@@ -206,11 +208,83 @@ app.get("/api/history/:symbol", async (req, res) => {
     res.status(500).json({ error: "Unable to fetch chart data." });
   }
 });
+app.post("/predict/:ticker", async (req, res) => {
+  let ticker = req.params.ticker;
+  console.log(`company is ${ticker}`);
+  const venvPython = '../python/venv/bin/python';
+  let company = "";
+  try {
+    const comname = await StockTickerMapping.findOne({ StockSymbol: ticker });
 
-  
-  
-  
-  
+    if (!comname) {
+      return res.status(404).send('Company not found');
+    }
 
-// Start server
+    company = comname.CommonName;
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+  try {
+    //Step 1: Fetch news using fetch_news.py
+    console.log(`Fetching news for ${company}`);
+    console.log(`${venvPython} ../python/fetch_news.py "${company}"`);
+    const newsRaw = execSync(`${venvPython} ../python/fetch_news.py "${company}"`).toString();
+    
+    const newsList = JSON.parse(newsRaw);
+    const results = [];
+
+    // Step 2: Analyze sentiment for each news headline
+    console.log(`Analyzing sentiment for ${company}`);
+    sentimentScore = 0;
+    for (const item of newsList) {
+      const title = item.title.replace(/"/g, "'"); // Escape quotes
+      let description = item.description.replace(/"/g, "'"); // Escape quotes
+      description = description.replace("\n"," ");
+      try{
+        const output = execSync(`${venvPython} ../python/sentiment_analyzer.py "${title}: ${description}" "${company}"`).toString();
+
+        const sentimentLine = output.split("\n")[0]
+        const confidenceLine = output.split("\n")[1]
+
+        sentiment = parseInt(sentimentLine?.split(":")[1]?.trim()) || 0;
+        confidence = parseFloat(confidenceLine?.split(":")[1]?.trim()) || 0;
+
+        sentimentScore += sentiment * confidence * 100;
+      }
+      catch(err){
+        console.error("Pipeline error:", err.message);
+      }
+    }
+    //Step 3: Predict
+    
+    console.log(`Predicting for ${company}`);
+    const raw = execSync(`${venvPython} ../python/predict.py ${ticker}`).toString();
+    const predicted = JSON.parse(raw); // This will be a JS array now
+    let [open, high, low, close] = predicted;
+    const changeFactor = (1 + sentimentScore*0.0003);
+    console.log(`Change factor: ${changeFactor}`);
+    open = open*changeFactor;
+    close = close*changeFactor;
+    high = high*changeFactor;
+    low = low*changeFactor;
+    
+    
+    res.render("predict", {
+      ticker: company,
+      symbol: ticker+".NS",
+      sentimentScore,
+      open,
+      close,
+      high,
+      low
+    });
+
+  } catch (err) {
+    console.error("Pipeline error:", err.message);
+    res.status(500).json({ error: "Failed to run prediction pipeline." });
+  }
+});
+
+
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));

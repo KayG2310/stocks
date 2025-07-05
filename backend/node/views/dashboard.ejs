@@ -26,9 +26,6 @@
   <nav class="navbar">
     <div class="logo">StockSentiment</div>
     <ul class="nav-links">
-      <li><a href="#">Dashboard</a></li>
-      <li><a href="#">History</a></li>
-      <li><a href="#">Profile</a></li>
       <li><a href="/auth/logout" class="logout-btn">Logout</a></li>
     </ul>
   </nav>
@@ -117,7 +114,7 @@
           plugins: { legend: { display: false } },
           scales: {
   x: {
-    display: true,
+    display: false,
     title: {
       display: true,
       text: 'Date'
@@ -146,7 +143,8 @@ plugins: {
       const res = await fetch(`/api/history/${symbol}`);
       const data = await res.json();
     
-      const labels = data.map(d => d.time.slice(11, 16)); // show time only (HH:MM)
+      const labels = data.map(d => new Date(d.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
       const prices = data.map(d => d.price);
     
       chartRefs[label] = createChart(canvasId, label, color, labels, prices);
