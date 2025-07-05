@@ -3,8 +3,12 @@
 import requests
 import sys
 import os
+import json
+from dotenv import load_dotenv
+import os
 
-API_KEY = "d85f982c6cdc4071b7b86037caa8a05f"
+load_dotenv(dotenv_path='../.env')  # path relative to python file
+API_KEY = os.getenv("NEWSAPI_KEY")
 
 INDIAN_FINANCIAL_DOMAINS = [
     "moneycontrol.com",
@@ -33,7 +37,6 @@ def fetch_indian_stock_news(company_name, limit=5):
     if response.status_code != 200:
         print(f"Error: {response.status_code} — {response.text}")
         return []
-
     articles = response.json().get("articles", [])
     results = []
 
@@ -51,16 +54,16 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python fetch_news_newsapi.py <company_name>")
         sys.exit(1)
-
     company = " ".join(sys.argv[1:])
     news = fetch_indian_stock_news(company)
+    print(json.dumps(news));
 
-    if not news:
-        print(f"No news found for '{company}' in Indian finance sources.")
-    else:
-        print(f"\n📰 Latest News on {company} (India-specific):\n")
-        for i, item in enumerate(news, 1):
-            print(f"{i}. {item['title']}")
-            print(f"   {item['url']}")
-            print(f"   {item['description']}")
-            print(f"   Published at: {item['publishedAt']}\n")
+    # if not news:
+    #     print(f"No news found for '{company}' in Indian finance sources.")
+    # else:
+    #     print(f"\n📰 Latest News on {company} (India-specific):\n")
+    #     for i, item in enumerate(news, 1):
+    #         print(f"{i}. {item['title']}")
+    #         print(f"   {item['url']}")
+    #         print(f"   {item['description']}")
+    #         print(f"   Published at: {item['publishedAt']}\n")
